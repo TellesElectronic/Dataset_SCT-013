@@ -1,0 +1,7 @@
+{
+  "name": "sct013-dataset",
+  "version": "1.0.0",
+  "description": "Dataset collector for SCT-013 + ADS1115 TinyML project",
+  "scripts": { "dev": "vercel dev" },
+  "engines": { "node": "18.x" }
+}

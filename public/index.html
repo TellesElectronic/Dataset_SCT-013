@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dataset UPT Aragua - Analisis de Corriete — TinyML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ── */
+:root,[data-theme="light"]{
+  --bg:#f7f6f2; --surface:#ffffff; --surface-2:#f3f0ec; --border:oklch(0.2 0.01 80/0.12);
+  --text:#1a1814; --muted:#6b6966; --faint:#b0aeaa;
+  --primary:#01696f; --primary-h:#0c4e54; --primary-hi:#cedcd8;
+  --success:#437a22; --success-hi:#d4dfcc;
+  --warning:#964219; --warning-hi:#ddcfc6;
+  --error:#a12c7b; --error-hi:#e0ced7;
+  --blue:#006494; --blue-hi:#c6d8e4;
+  --orange:#da7101; --orange-hi:#e7d7c4;
+  --shadow-sm:0 1px 3px oklch(0.2 0.01 80/0.07);
+  --shadow-md:0 4px 14px oklch(0.2 0.01 80/0.09);
+  --r-sm:0.375rem; --r-md:0.5rem; --r-lg:0.75rem; --r-xl:1rem; --r-full:9999px;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --t-xs:clamp(.75rem,.7rem + .25vw,.875rem);
+  --t-sm:clamp(.875rem,.8rem + .35vw,1rem);
+  --t-base:clamp(1rem,.95rem + .25vw,1.125rem);
+  --t-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
+  --t-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+  --ease:180ms cubic-bezier(.16,1,.3,1);
+}
+[data-theme="dark"]{
+  --bg:#131211; --surface:#1c1b19; --surface-2:#232220; --border:oklch(1 0 0/0.08);
+  --text:#d4d2cf; --muted:#787674; --faint:#4e4d4b;
+  --primary:#4f98a3; --primary-h:#227f8b; --primary-hi:#1f3436;
+  --success:#6daa45; --success-hi:#263520;
+  --warning:#bb653b; --warning-hi:#3d2318;
+  --error:#d163a7; --error-hi:#2f1a28;
+  --blue:#5591c7; --blue-hi:#1a2a3c;
+  --orange:#fdab43; --orange-hi:#3d2c10;
+  --shadow-sm:0 1px 3px oklch(0 0 0/.25); --shadow-md:0 4px 14px oklch(0 0 0/.35);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:var(--t-base);color:var(--text);background:var(--bg);min-height:100dvh;line-height:1.6}
+input,button,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+a,button,[role="button"],input,select,textarea{transition:color var(--ease),background var(--ease),border-color var(--ease),box-shadow var(--ease)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:var(--r-sm)}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.logo{display:flex;align-items:center;gap:.6rem;font-weight:600;font-size:var(--t-base);color:var(--text)}
+.logo svg{color:var(--primary)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:.75rem}
+main{padding:1.5rem;max-width:1200px;width:100%;margin-inline:auto}
+
+/* ── KPI Cards ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.25rem;box-shadow:var(--shadow-sm)}
+.kpi-label{font-size:var(--t-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.25rem}
+.kpi-val{font-size:var(--t-xl);font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--primary)}
+.kpi-sub{font-size:var(--t-xs);color:var(--faint);margin-top:.25rem}
+
+/* ── Sección de entrada manual ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.25rem 1.5rem;box-shadow:var(--shadow-sm);margin-bottom:1.25rem}
+.card-title{font-size:var(--t-base);font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;align-items:end}
+.form-group{display:flex;flex-direction:column;gap:.3rem}
+label{font-size:var(--t-sm);color:var(--muted);font-weight:500}
+select,input[type="text"],input[type="number"],textarea{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:.5rem .75rem;font-size:var(--t-sm);color:var(--text);width:100%}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--primary);outline-offset:0;border-color:var(--primary)}
+textarea{resize:vertical;min-height:70px;font-family:var(--font-body)}
+.form-wide{grid-column:1/-1}
+
+/* ── Botones ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--r-md);font-size:var(--t-sm);font-weight:500;white-space:nowrap;border:1px solid transparent}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-h)}
+.btn-outline{border-color:var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--surface-2)}
+.btn-danger{background:var(--error-hi);color:var(--error)}
+.btn-danger:hover{background:var(--error);color:#fff}
+.btn-success{background:var(--success-hi);color:var(--success)}
+.btn-success:hover{background:var(--success);color:#fff}
+.btn-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+
+/* ── Status bar ── */
+.status-bar{display:flex;align-items:center;gap:.5rem;font-size:var(--t-xs);color:var(--muted);margin-bottom:.75rem}
+.dot{width:8px;height:8px;border-radius:var(--r-full);background:var(--faint);flex-shrink:0}
+.dot.live{background:var(--success);box-shadow:0 0 0 3px var(--success-hi);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── Distribución de clases ── */
+.clases-grid{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.clase-chip{display:flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:var(--r-full);font-size:var(--t-xs);font-weight:600;background:var(--surface-2);border:1px solid var(--border)}
+.clase-chip .cnt{background:var(--primary);color:#fff;border-radius:var(--r-full);padding:0 .45rem;font-size:.7rem}
+
+/* ── URL de prueba ── */
+.url-box{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:.6rem .9rem;font-family:var(--font-mono);font-size:var(--t-xs);color:var(--muted);word-break:break-all;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.url-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Tabla ── */
+.table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:var(--t-sm);font-variant-numeric:tabular-nums}
+thead th{background:var(--surface-2);padding:.55rem .75rem;text-align:left;font-weight:600;color:var(--muted);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover td{background:var(--surface-2)}
+tbody td{padding:.5rem .75rem;color:var(--text);vertical-align:middle}
+td.mono{font-family:var(--font-mono);font-size:var(--t-xs);color:var(--muted)}
+
+/* ── Badges ── */
+.badge{padding:.15rem .55rem;border-radius:var(--r-full);font-size:.7rem;font-weight:700;display:inline-block}
+.b0{background:var(--surface-2);color:var(--muted)}
+.b1{background:var(--success-hi);color:var(--success)}
+.b2{background:var(--blue-hi);color:var(--blue)}
+.b3{background:var(--error-hi);color:var(--error)}
+.b4{background:var(--warning-hi);color:var(--warning)}
+.b5{background:var(--primary-hi);color:var(--primary)}
+
+/* ── Editar comentario ── */
+.comment-cell{display:flex;align-items:center;gap:.35rem;max-width:200px}
+.comment-input{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:.2rem .5rem;font-size:var(--t-xs);color:var(--text);width:140px}
+.comment-input:focus{outline:1px solid var(--primary)}
+.btn-icon{padding:.25rem .4rem;border-radius:var(--r-sm);font-size:.7rem;background:var(--surface-2);border:1px solid var(--border);color:var(--muted)}
+.btn-icon:hover{background:var(--primary-hi);color:var(--primary)}
+
+/* ── Vacío ── */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty svg{color:var(--faint);margin-bottom:1rem}
+.empty h3{color:var(--text);margin-bottom:.4rem}
+
+/* ── Theme toggle ── */
+.toggle-btn{padding:.4rem;border-radius:var(--r-md);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center}
+.toggle-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:.75rem 1rem;box-shadow:var(--shadow-md);font-size:var(--t-sm);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;max-width:280px;z-index:999}
+#toast.show{opacity:1;transform:none}
+#toast.ok{border-left:3px solid var(--success)}
+#toast.err{border-left:3px solid var(--error)}
+
+@media(max-width:640px){
+  header{padding:.6rem 1rem}
+  main{padding:1rem}
+  .form-row{grid-template-columns:1fr}
+  .kpi-val{font-size:var(--t-lg)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <!-- Logo SVG custom -->
+  <div class="logo">
+  <img src="logo-universidad.png" alt="Logo Universidad" width="32" height="32"
+       style="object-fit:contain; border-radius:4px;">
+    <span>Dataset UPT Aragua IOT Analisis de Corriente</span>
+  </div>
+  <div class="header-right">
+    <span id="hdr-count" style="font-size:var(--t-xs);color:var(--muted)">— registros</span>
+    <button class="toggle-btn" data-theme-toggle aria-label="Cambiar tema">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Total registros</div>
+      <div class="kpi-val" id="kpi-total">0</div>
+      <div class="kpi-sub">muestras capturadas</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Clases</div>
+      <div class="kpi-val" id="kpi-clases">0</div>
+      <div class="kpi-sub">etiquetas distintas</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Último label</div>
+      <div class="kpi-val" id="kpi-ultimo" style="font-size:var(--t-lg)">—</div>
+      <div class="kpi-sub" id="kpi-ts">sin datos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Última Irms</div>
+      <div class="kpi-val" id="kpi-rms">0.00</div>
+      <div class="kpi-sub">A (RMS)</div>
+    </div>
+  </div>
+
+  <!-- Distribución de clases -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Distribución por clase
+    </div>
+    <div id="clases-chips" class="clases-grid">
+      <span style="color:var(--faint);font-size:var(--t-xs)">Sin datos aún...</span>
+    </div>
+  </div>
+
+  <!-- Registro manual -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Registrar muestra manual / de prueba
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="m-label">Clase (label)</label>
+        <select id="m-label">
+          <option value="0">0 — reposo</option>
+          <option value="1">1 — lampara</option>
+          <option value="2">2 — motor</option>
+          <option value="3">3 — resistencia</option>
+          <option value="4">4 — PC</option>
+          <option value="5">5 — otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="m-rms">RMS (A)</label>
+        <input type="number" id="m-rms" value="0.00" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="m-pico">Pico (cuentas)</label>
+        <input type="number" id="m-pico" value="0" step="1">
+      </div>
+      <div class="form-group">
+        <label for="m-crest">Crest factor</label>
+        <input type="number" id="m-crest" value="1.41" step="0.01">
+      </div>
+      <div class="form-group form-wide">
+        <label for="m-comentario">Comentario</label>
+        <textarea id="m-comentario" placeholder="Ej: motor 0.5 HP en vacío, temperatura ambiente 28°C, red estable 220V..."></textarea>
+      </div>
+    </div>
+    <div class="btn-actions">
+      <button class="btn btn-primary" onclick="enviarManual()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Enviar registro
+      </button>
+    </div>
+  </div>
+
+  <!-- URL de prueba para ESP32 -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      URL GET para ESP32
+    </div>
+    <p style="font-size:var(--t-sm);color:var(--muted);margin-bottom:.75rem">Copia esta URL como base en el código Arduino. Reemplaza los valores de los parámetros con las variables de tu sketch.</p>
+    <div class="url-box">
+      <span class="url-text" id="url-ejemplo">/api/save?label=1&rms=12.50&media=0.00&pico=450&crest=1.41&varianza=78.5&comentario=prueba</span>
+      <button class="btn-icon" onclick="copiarURL()" title="Copiar URL">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="btn-actions" style="margin-bottom:1.25rem">
+    <button class="btn btn-success" onclick="descargarCSV()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar CSV
+    </button>
+    <button class="btn btn-outline" onclick="actualizarTabla()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Actualizar
+    </button>
+    <button class="btn btn-danger" onclick="confirmarLimpiar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      Limpiar dataset
+    </button>
+  </div>
+
+  <!-- Estado y tabla -->
+  <div class="status-bar">
+    <span class="dot live" id="dot"></span>
+    <span id="status-txt">Actualizando cada 3 s...</span>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="table-wrap" id="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Hora</th>
+            <th>Clase</th>
+            <th>RMS (A)</th>
+            <th>Pico</th>
+            <th>Crest</th>
+            <th>Varianza</th>
+            <th>Comentario</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="8">
+            <div class="empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <h3>Sin datos todavía</h3>
+              <p style="max-width:32ch;font-size:var(--t-sm)">Envía un registro manual arriba o conecta el ESP32 para empezar a capturar.</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Theme toggle ──────────────────────────────────────────────
+(function(){
+  const btn = document.querySelector('[data-theme-toggle]');
+  const root = document.documentElement;
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  root.setAttribute('data-theme', d);
+  function setIcon(){
+    btn.innerHTML = d==='dark'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  }
+  setIcon();
+  btn && btn.addEventListener('click', ()=>{
+    d = d==='dark'?'light':'dark';
+    root.setAttribute('data-theme', d);
+    setIcon();
+  });
+})();
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, tipo='ok'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + tipo;
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ── Clases ───────────────────────────────────────────────────
+const LABELS  = ['reposo','lampara','motor','resistencia','PC','otro'];
+const BCLASS  = ['b0','b1','b2','b3','b4','b5'];
+
+// ── Estado local (en memoria para el sandbox) ────────────────
+let registrosLocales = [];
+
+// ── Fetch datos desde API ─────────────────────────────────────
+async function actualizarTabla(){
+  try {
+    const r    = await fetch('/api/data');
+    const json = await r.json();
+    registrosLocales = json.datos || [];
+    renderTabla(registrosLocales);
+    renderKPIs(json);
+    renderClases(json.clases || {});
+    document.getElementById('status-txt').textContent =
+      'Última actualización: ' + new Date().toLocaleTimeString();
+    document.getElementById('dot').classList.add('live');
+  } catch(e){
+    document.getElementById('status-txt').textContent = 'Error al conectar con el servidor';
+    document.getElementById('dot').classList.remove('live');
+  }
+}
+
+function renderKPIs(json){
+  document.getElementById('kpi-total').textContent  = json.registros ?? 0;
+  document.getElementById('hdr-count').textContent  = (json.registros ?? 0) + ' registros';
+  document.getElementById('kpi-clases').textContent = Object.keys(json.clases||{}).length;
+  const datos = json.datos || [];
+  if(datos.length > 0){
+    const ult = datos[datos.length-1];
+    document.getElementById('kpi-ultimo').textContent = ult.label_nombre || ult.label || '—';
+    document.getElementById('kpi-ts').textContent = (ult.timestamp||'').substring(11,19) || '—';
+    document.getElementById('kpi-rms').textContent = parseFloat(ult.rms||0).toFixed(3);
+  }
+}
+
+function renderClases(clases){
+  const el = document.getElementById('clases-chips');
+  if(!Object.keys(clases).length){
+    el.innerHTML = '<span style="color:var(--faint);font-size:var(--t-xs)">Sin datos aún...</span>';
+    return;
+  }
+  el.innerHTML = Object.entries(clases)
+    .map(([k,v])=>{
+      const idx = LABELS.indexOf(k);
+      const bc  = BCLASS[idx>=0?idx:5];
+      return `<span class="clase-chip"><span class="badge ${bc}">${k}</span><span class="cnt">${v}</span></span>`;
+    }).join('');
+}
+
+function renderTabla(datos){
+  const tbody = document.getElementById('tabla-body');
+  if(!datos.length){
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <h3>Sin datos todavía</h3>
+        <p style="max-width:32ch;font-size:var(--t-sm)">Envía un registro manual o conecta el ESP32.</p>
+      </div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...datos].reverse().slice(0,150).map((row, i)=>{
+    const n    = datos.length - i;
+    const idx  = parseInt(row.label ?? 0);
+    const bc   = BCLASS[idx] ?? 'b5';
+    const hora = (row.timestamp||'').substring(11,19) || '—';
+    const rms  = parseFloat(row.rms||0).toFixed(3);
+    const pico = row.pico || '—';
+    const cr   = parseFloat(row.crest||0).toFixed(3);
+    const va   = parseFloat(row.varianza||0).toFixed(1);
+    const com  = row.comentario || '';
+    return `<tr>
+      <td class="mono">${n}</td>
+      <td class="mono">${hora}</td>
+      <td><span class="badge ${bc}">${row.label_nombre||row.label}</span></td>
+      <td class="mono">${rms}</td>
+      <td class="mono">${pico}</td>
+      <td class="mono">${cr}</td>
+      <td class="mono">${va}</td>
+      <td>
+        <div class="comment-cell">
+          <input class="comment-input" id="ci-${n}" value="${com}" placeholder="Agregar comentario..." maxlength="120">
+          <button class="btn-icon" onclick="guardarComentario(${n},'${row.timestamp}')" title="Guardar">✓</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Guardar comentario editado ────────────────────────────────
+async function guardarComentario(filaVisible, ts){
+  const input = document.getElementById('ci-' + filaVisible);
+  if(!input) return;
+  const com = encodeURIComponent(input.value);
+  const id  = registrosLocales.length - filaVisible + 1;
+  try {
+    const r = await fetch(`/api/comment?id=${id}&comentario=${com}`);
+    const j = await r.json();
+    if(j.ok) toast('Comentario guardado ✓');
+    else toast('Error al guardar', 'err');
+  } catch { toast('Error de red', 'err'); }
+}
+
+// ── Envío manual ──────────────────────────────────────────────
+async function enviarManual(){
+  const label     = document.getElementById('m-label').value;
+  const rms       = document.getElementById('m-rms').value;
+  const pico      = document.getElementById('m-pico').value;
+  const crest     = document.getElementById('m-crest').value;
+  const comentario = encodeURIComponent(document.getElementById('m-comentario').value);
+  const url = `/api/save?label=${label}&rms=${rms}&media=0&pico=${pico}&crest=${crest}&varianza=0&comentario=${comentario}`;
+  try {
+    const r = await fetch(url);
+    const j = await r.json();
+    if(j.ok){
+      toast(`Registro #${j.registros} guardado — ${j.guardado.labelNombre}`);
+      document.getElementById('m-comentario').value = '';
+      await actualizarTabla();
+    } else toast('Error: ' + j.error, 'err');
+  } catch { toast('Error de red', 'err'); }
+}
+
+// ── Descargar CSV ─────────────────────────────────────────────
+function descargarCSV(){ window.open('/api/download','_blank'); }
+
+// ── Copiar URL ────────────────────────────────────────────────
+function copiarURL(){
+  const base = window.location.origin;
+  const url  = base + document.getElementById('url-ejemplo').textContent;
+  navigator.clipboard.writeText(url).then(()=>toast('URL copiada al portapapeles ✓'));
+}
+
+// ── Limpiar dataset ───────────────────────────────────────────
+async function confirmarLimpiar(){
+  if(!confirm('¿Borrar todos los registros del dataset?')) return;
+  await fetch('/api/clear');
+  registrosLocales = [];
+  toast('Dataset limpiado', 'err');
+  await actualizarTabla();
+}
+
+// ── Auto-actualización cada 3s ────────────────────────────────
+actualizarTabla();
+setInterval(actualizarTabla, 3000);
+</script>
+</body>
+</html>
