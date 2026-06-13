@@ -1,8 +1,15 @@
-const fs = require('fs');
-const CSV_PATH = '/tmp/dataset_sct013.csv';
-const HEADERS  = 'timestamp,label,label_nombre,rms,media,pico,crest,varianza,comentario\n';
-module.exports = (req, res) => {
+// api/clear.js
+const { Redis } = require('@upstash/redis');
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  fs.writeFileSync(CSV_PATH, HEADERS);
-  return res.status(200).json({ ok: true, mensaje: 'Dataset limpiado' });
+
+  await redis.del('dataset:sct013');
+
+  res.status(200).json({ ok: true, mensaje: 'Dataset borrado correctamente' });
 };
